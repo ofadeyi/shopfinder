@@ -3,6 +3,7 @@ package com.example.shopfinder.shop;
 import com.example.shopfinder.exceptions.GeolocationException;
 import com.example.shopfinder.exceptions.ShopAlreadyPresentException;
 import com.example.shopfinder.exceptions.ShopNotFoundException;
+import com.example.shopfinder.geo.DistanceCalculator;
 import com.google.common.collect.Maps;
 import com.jayway.jsonpath.JsonPath;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -20,7 +22,9 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * Created by ofadeyi.
@@ -30,12 +34,20 @@ public class ShopController {
     @Value("${geolocation.baseUrl}")
     private String geolocationBaseUrl;
 
+    @Value("${geolocation.maxRange}")
+    private double maxRange;
+
+    @Value("${geolocation.unit}")
+    private String unit;
+
+
     private Map<Long, Shop> shops = Maps.newConcurrentMap();
     private final AtomicLong counter = new AtomicLong();
 
     @RequestMapping(value = "/shops", method = RequestMethod.DELETE)
     public ResponseEntity<?> clearShops() {
         shops.clear();
+        counter.set(0l);
         return new ResponseEntity<>(null, null, HttpStatus.OK);
     }
 
@@ -80,6 +92,17 @@ public class ShopController {
         }
         return new ResponseEntity(shops.get(id), HttpStatus.OK);
     }
+	
+	 @RequestMapping(value = "/shops/search", method = RequestMethod.GET,
+            produces = {MediaType.APPLICATION_JSON_UTF8_VALUE})
+    public ResponseEntity<Shop> findShops(@RequestParam(value = "customerLatitude") Double latitude,
+                                          @RequestParam(value = "customerLongitude") Double longitude) {
+        Optional<Set<Shop>> nearShops = findNearShops(latitude, longitude);
+        if (nearShops.isPresent()) {
+            return new ResponseEntity(nearShops.get(), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(null, null, HttpStatus.NO_CONTENT);
+    }
 
     private Optional<Pair<Double, Double>> geoLocate(Shop newShop) {
         if (newShop == null) {
@@ -116,4 +139,31 @@ public class ShopController {
                         shop.getAddress().equals(aShop.getAddress())))
                 .findFirst();
     }
+
+    private Optional<Set<Shop>> findNearShops(double latitude, double longitude) {
+        if (shops.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Set<Shop> nearShops = shops.values().stream()
+                .filter(shop -> isNear(latitude, longitude, shop.getLatitude(), shop.getLongitude()))
+                .collect(Collectors.toSet());
+
+        if (nearShops.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(nearShops);
+    }
+
+
+    private boolean isNear(double searchLatitude, double searchLongitude,
+                           double shopLatitude, double shopLongitude) {
+        double distance = DistanceCalculator.distance(searchLatitude, searchLongitude, shopLatitude, shopLongitude, unit);
+        if (distance < maxRange) {
+            return true;
+        }
+        return false;
+    }
+
 }

@@ -1,2 +1,5 @@
 geolocation:
   baseUrl: https://maps.googleapis.com/maps/api/geocode/json
+  maxRange: 1
+  unit: K
+

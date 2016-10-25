@@ -112,4 +112,53 @@ public class ShopFinderApplicationTests {
 
         then(entities.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
+
+
+
+    @Test
+    public void shouldReturn204WhenNoShopsNearAreFound() throws Exception {
+        Shop zooShop = new Shop("London Zoo", new Address("1", "NW1 4RY"));
+        Shop madameShop = new Shop("Madame Tussauds", new Address("1", "NW1 5LR"));
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entity1 = this.testRestTemplate.postForEntity(
+                "http://localhost:" + this.port + "/shops", zooShop, Object.class);
+
+        then(entity1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entity2 = this.testRestTemplate.postForEntity(
+                "http://localhost:" + this.port + "/shops", madameShop, Object.class);
+
+        then(entity2.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entities = this.testRestTemplate.getForEntity(
+                "http://localhost:" + this.port + "/shops/search?customerLatitude=51.4673&customerLongitude=-0.4529", Object.class);
+
+        then(entities.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+    }
+
+    @Test
+    public void shouldReturn200WhenShopsNearAreFound() throws Exception {
+        Shop zooShop = new Shop("London Zoo", new Address("1", "NW1 4RY"));
+        Shop madameShop = new Shop("Madame Tussauds", new Address("1", "NW1 5LR"));
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entity1 = this.testRestTemplate.postForEntity(
+                "http://localhost:" + this.port + "/shops", zooShop, Object.class);
+
+        then(entity1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entity2 = this.testRestTemplate.postForEntity(
+                "http://localhost:" + this.port + "/shops", madameShop, Object.class);
+
+        then(entity2.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entities = this.testRestTemplate.getForEntity(
+                "http://localhost:" + this.port + "/shops/search?customerLatitude=51.5240095&customerLongitude=-0.1580093", Object.class);
+
+        then(entities.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
 }
