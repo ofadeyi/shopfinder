@@ -1,5 +1,8 @@
 package com.example.shopfinder;
 
+import com.example.shopfinder.shop.Address;
+import com.example.shopfinder.shop.Shop;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,13 +27,47 @@ public class ShopFinderApplicationTests {
 	@Autowired
 	private TestRestTemplate testRestTemplate;
 
+    @Before
+    public void init(){
+        this.testRestTemplate.delete("http://localhost:" + this.port + "/shops");
+    }
+
 	@Test
 	public void shouldReturn204WhenSendingRequestToControllerWithNoShops() throws Exception {
 		@SuppressWarnings("rawtypes")
-		ResponseEntity<Map> entity = this.testRestTemplate.getForEntity(
-				"http://localhost:" + this.port + "/shops", Map.class);
+		ResponseEntity entity = this.testRestTemplate.getForEntity(
+				"http://localhost:" + this.port + "/shops", Object.class);
 
 		then(entity.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 	}
+
+    @Test
+    public void shouldReturn200WhenPOSTingAnAlreadyPresentShopToController() throws Exception {
+        Shop zooShop1 = new Shop("London Zoo", new Address("1", "NW1 4RY"));
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entity1 = this.testRestTemplate.postForEntity(
+                "http://localhost:" + this.port + "/shops", zooShop1, Object.class);
+
+        then(entity1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    public void shouldReturn400WhenPOSTingAnAlreadyPresentShopToController() throws Exception {
+        Shop zooShop1 = new Shop("London Zoo", new Address("1", "NW1 4RY"));
+        Shop zooShop2 = new Shop("London Zoo", new Address("1", "NW14RY"));
+
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entity1 = this.testRestTemplate.postForEntity(
+                "http://localhost:" + this.port + "/shops", zooShop1, Object.class);
+
+        then(entity1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entity2 = this.testRestTemplate.postForEntity(
+                "http://localhost:" + this.port + "/shops", zooShop2, Object.class);
+
+        then(entity2.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
 
 }
