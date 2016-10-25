@@ -13,8 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.Map;
-
 import static org.assertj.core.api.BDDAssertions.then;
 
 @RunWith(SpringRunner.class)
@@ -69,5 +67,49 @@ public class ShopFinderApplicationTests {
         then(entity2.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
+    @Test
+    public void shouldReturn200WhenGETtingAShopFromControllerWithShops() throws Exception {
+        Shop zooShop = new Shop("London Zoo", new Address("1", "NW1 4RY"));
+        Shop madameShop = new Shop("Madame Tussauds", new Address("1", "NW1 5LR"));
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entity1 = this.testRestTemplate.postForEntity(
+                "http://localhost:" + this.port + "/shops", zooShop, Object.class);
 
+        then(entity1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entity2 = this.testRestTemplate.postForEntity(
+                "http://localhost:" + this.port + "/shops", madameShop, Object.class);
+
+        then(entity2.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entity3 = this.testRestTemplate.getForEntity(
+                "http://localhost:" + this.port + "/shops/2", Object.class);
+
+        then(entity3.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    public void shouldReturn200WhenGETtingShopsFromControllerWithShops() throws Exception {
+        Shop zooShop = new Shop("London Zoo", new Address("1", "NW1 4RY"));
+        Shop madameShop = new Shop("Madame Tussauds", new Address("1", "NW1 5LR"));
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entity1 = this.testRestTemplate.postForEntity(
+                "http://localhost:" + this.port + "/shops", zooShop, Object.class);
+
+        then(entity1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entity2 = this.testRestTemplate.postForEntity(
+                "http://localhost:" + this.port + "/shops", madameShop, Object.class);
+
+        then(entity2.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        @SuppressWarnings("rawtypes")
+        ResponseEntity entities = this.testRestTemplate.getForEntity(
+                "http://localhost:" + this.port + "/shops", Object.class);
+
+        then(entities.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
 }

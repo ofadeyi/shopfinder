@@ -2,6 +2,7 @@ package com.example.shopfinder.shop;
 
 import com.example.shopfinder.exceptions.GeolocationException;
 import com.example.shopfinder.exceptions.ShopAlreadyPresentException;
+import com.example.shopfinder.exceptions.ShopNotFoundException;
 import com.google.common.collect.Maps;
 import com.jayway.jsonpath.JsonPath;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,10 +11,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -73,6 +71,14 @@ public class ShopController {
                 .buildAndExpand(shopWithGeolocation.getId()).toUri());
 
         return new ResponseEntity<>(null, httpHeaders, HttpStatus.CREATED);
+    }
+
+    @RequestMapping(value = "/shops/{id}", method = RequestMethod.GET, produces = {MediaType.APPLICATION_JSON_UTF8_VALUE})
+    public ResponseEntity<Shop> retrieveShop(@PathVariable Long id) {
+        if (!shops.containsKey(id)) {
+            throw new ShopNotFoundException(id);
+        }
+        return new ResponseEntity(shops.get(id), HttpStatus.OK);
     }
 
     private Optional<Pair<Double, Double>> geoLocate(Shop newShop) {
